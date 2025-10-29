@@ -1,18 +1,15 @@
-// src/index.js (NEW FILE - in every MFE project)
+// In the MFE's entry file (e.g., src/index.js or src/bootstrap.js)
 
-// --- A. Public Path Setup ---
-// This code must execute BEFORE the dynamic import
-if (window.__remotes__) {
-  // If the host app defined a public path (from the HTML injection), use it.
-  __webpack_public_path__ = window.__remotes__['creditCardMFE1']; 
-} else if (process.env.NODE_ENV === 'production') {
-  // Fallback for standalone MFE access in production
-  __webpack_public_path__ = '/';
+// IMPORTANT: Identify the URL of the SCRIPT TAG that loaded THIS MFE
+const script = document.querySelector(`script[src*="remoteEntry.js"]`);
+if (script) {
+  // Extract the MFE's base URL from the script tag's source attribute
+  // Example: If src is https://poc-webpack-repo4.vercel.app/remoteEntry.js, we get the base URL
+  const publicPath = script.src.substring(0, script.src.lastIndexOf('/') + 1);
+  
+  // FIX: Immediately tell Webpack where to load chunks from
+  __webpack_public_path__ = publicPath;
 }
-// --- End Public Path Setup ---
 
-
-// --- B. Dynamic Import ---
-// We use dynamic import to ensure the public path is set before the main code loads.
-// Note: This must match the new name of your old entry file.
+// Ensure the main logic is dynamically imported (as you did previously)
 import('./bootstrap');

@@ -30,11 +30,9 @@ module.exports = (env, argv) => {
     },
     
     output: {
-      // 🟢 FIX 1: Define the path to write the final build files
+      // FIX: Set a publicPath that is instantly overridden by the MFE's runtime code
+      publicPath: 'auto', // Use 'auto' to ensure Webpack defaults are disabled
       path: path.resolve(__dirname, 'dist'),
-      
-      // 🟢 FIX 2: Set the dynamic public path
-      publicPath: publicPath,
     },
     
     resolve: {
