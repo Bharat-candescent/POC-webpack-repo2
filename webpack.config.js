@@ -1,93 +1,32 @@
-const path = require('path'); // Path is needed for the output directory
+const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+const { ModuleFederationPlugin } = require('webpack').container;
 const deps = require('./package.json').dependencies;
 
-// Convert module.exports to a function to access the command line arguments (argv)
-module.exports = (env, argv) => {
-  // Determine if the build mode is production
-  const isProduction = argv.mode === 'production';
-  console.log(`[CREDIT CARD MFE CONFIG] Building in ${argv.mode} mode.`);
-
-  // Define dynamic publicPath:
-  // Local (Development): Use the local port 8081
-  const devPath = 'http://localhost:8081/'; 
-  
-  // Production (Vercel): Use the root-relative path
-  // Assumes the deployment URL for this MFE is poc-webpack-repo4.vercel.app/
-  // const prodPath = '/credit-card-mfe-1/';
-  const prodPath = '/';
-
-  const publicPath = isProduction ? prodPath : devPath;
-  
-  return {
-    entry: './src/index.js', 
-    // Remove the explicit 'mode: development' line
-    
-    devServer: {
-      port: 8081,
-      open: true,
-    },
-    
-    output: {
-      // FIX: Set a publicPath that is instantly overridden by the MFE's runtime code
-      publicPath: 'auto', // Use 'auto' to ensure Webpack defaults are disabled
-      path: path.resolve(__dirname, 'dist'),
-    },
-    
-    resolve: {
-      extensions: ['.js', '.jsx'],
-    },
-    
-    module: {
-      rules: [
-        {
-          test: /\.jsx?$/,
-          exclude: /node_modules/,
-          use: {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-react', '@babel/preset-env'],
-            },
-          },
-        },
-      ],
-    },
-    
-    plugins: [
-      new ModuleFederationPlugin({
-        name: 'creditCardMFE1',
-        filename: 'remoteEntry.js',
-        exposes: {
-          './CreditCardComponent': './src/CreditCardMFE.jsx',
-        },
-        shared: {
-          // CRITICAL FIX FOR ISOLATION: Setting eager: true loads the dependency immediately
-          react: {
-            singleton: true,
-            requiredVersion: deps.react,
-            eager: true,
-          },
-          'react-dom': {
-            singleton: true,
-            requiredVersion: deps['react-dom'],
-            eager: true,
-          },
-          redux: {
-            singleton: true,
-            requiredVersion: deps.redux,
-            eager: true,
-          },
-          'react-redux': {
-            singleton: true,
-            requiredVersion: deps['react-redux'],
-            eager: true,
-          },
-        },
-      }),
-      new HtmlWebpackPlugin({
-        template: './public/index.html',
-      }),
-    ],
-  };
+module.exports = {
+  mode: 'development',
+  entry: './src/index.jsx',
+  devServer: {
+    port: 3001,
+    historyApiFallback: true,
+    headers: { 'Access-Control-Allow-Origin': '*' },
+  },
+  output: { publicPath: 'auto', path: path.resolve(__dirname, 'dist'), clean: true },
+  resolve: { extensions: ['.js', '.jsx'] },
+  module: { rules: [{ test: /\.jsx?$/, loader: 'babel-loader', exclude: /node_modules/ }] },
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'mfe2',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './App': './src/App',
+      },
+      shared: {
+        react: { singleton: true, requiredVersion: deps.react },
+        'react-dom': { singleton: true, requiredVersion: deps['react-dom'] },
+        'react-router-dom': { singleton: true, requiredVersion: deps['react-router-dom'] },
+      },
+    }),
+    new HtmlWebpackPlugin({ template: './public/index.html' }),
+  ],
 };
